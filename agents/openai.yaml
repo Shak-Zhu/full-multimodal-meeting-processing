@@ -1,0 +1,3 @@
+interface:
+  display_name: "Full Multimodal Meeting Processing"
+  short_description: "全量多模态会议深度处理：一个会议交付一份中文 Markdown（纪要+完整逐字稿+审计）"
