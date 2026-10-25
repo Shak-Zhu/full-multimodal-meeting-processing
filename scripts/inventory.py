@@ -12,7 +12,7 @@ inventory.py — 建立会议的 File Inventory（宪法第一条的执行工具
   - 音视频用 ffprobe（若不可用则 afinfo）读取时长。
   - 不修改任何输入文件。
 
-类型识别：按扩展名 + 必要时魔数。对 .docx/.xlsx/.pptx 额外报告可解析性提示。
+类型识别：仅按扩展名；清单不代表文件已解析或完整处理。
 """
 import argparse, hashlib, json, os, subprocess, sys
 
@@ -69,18 +69,27 @@ def fmt_size(n):
             return "{:.0f} {}".format(n, unit) if unit == "B" else "{:.1f} {}".format(n, unit)
         n /= 1024.0
 
-def collect(paths, exts=None):
+def collect(paths, exts=None, include_hidden=False):
     files = []
     for p in paths:
         if os.path.isfile(p):
             files.append(p)
         elif os.path.isdir(p):
-            for root, dirs, names in os.walk(p):
-                dirs[:] = [d for d in dirs if not d.startswith(".")]
+            def walk_error(error):
+                raise error
+            for root, dirs, names in os.walk(p, onerror=walk_error):
+                if not include_hidden:
+                    skipped = [d for d in dirs if d.startswith(".")]
+                    for d in skipped:
+                        print("未扫描隐藏目录（可用 --include-hidden 纳入）：" + os.path.join(root, d), file=sys.stderr)
+                    dirs[:] = [d for d in dirs if not d.startswith(".")]
                 for n in sorted(names):
-                    if n.startswith("."):
+                    if n.startswith(".") and not include_hidden:
+                        print("未扫描隐藏文件（可用 --include-hidden 纳入）：" + os.path.join(root, n), file=sys.stderr)
                         continue
                     files.append(os.path.join(root, n))
+        else:
+            raise FileNotFoundError("输入路径不存在或无法访问：" + p)
     if exts:
         want = {("." + e.lstrip(".").lower()) for e in exts}
         files = [f for f in files if os.path.splitext(f)[1].lower() in want]
@@ -96,12 +105,15 @@ def main():
     ap = argparse.ArgumentParser(description="建立会议材料 File Inventory")
     ap.add_argument("paths", nargs="+", help="文件或目录")
     ap.add_argument("--ext", help="逗号分隔的扩展名白名单", default="")
+    ap.add_argument("--include-hidden", action="store_true", help="将隐藏文件和目录加入清单")
     args = ap.parse_args()
     exts = [e for e in args.ext.split(",") if e.strip()] or None
-    files = collect(args.paths, exts)
+    if exts:
+        print("已启用扩展名过滤；结果不是全部材料清单", file=sys.stderr)
+    files = collect(args.paths, exts, args.include_hidden)
     rows = []
     for i, f in enumerate(files, 1):
-        name = os.path.basename(f)
+        name = os.path.abspath(f)
         ext = os.path.splitext(name)[1].lower()
         typ = EXT_TYPE.get(ext, "其他(" + (ext or "无扩展名") + ")")
         size = os.path.getsize(f)
@@ -113,6 +125,7 @@ def main():
             dur = fmt_dur(d)
             if d is not None:
                 note = "时长来自 ffprobe/afinfo"
+        name = name.replace("|", "&#124;").replace("\n", "<br>")
         rows.append((i, name, typ, fmt_size(size), sha, dur, note))
     print("| # | 文件 | 类型 | 大小 | SHA-256(前16) | 时长 | 完整处理 | 交叉验证 | 备注 |")
     print("|---|------|------|------|---------------|------|----------|----------|------|")

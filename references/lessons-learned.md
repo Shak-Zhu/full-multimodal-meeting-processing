@@ -86,6 +86,8 @@
 
 ## 10. 工具链环境速查（本机验证过的）
 
+以下是原作者历史环境记录，包含 macOS、代理、沙箱和工具性能的个案。接收方须重新检查，不能据此声称自己的模型已安装、命令被禁止或性能已验证。
+
 - whisper.cpp：`whisper-cli`，ggml-large-v3-turbo.bin 本机已有（~1.6GB）；M4 Pro 上 64 分钟音频全量约 2.5 分钟。
 - faster-whisper（pip，CPU int8 可用）；mlx-whisper 需 venv（uv）；注意系统设置了 SOCKS 代理（127.0.0.1:1082），huggingface_hub 会因缺 socksio 报错——要么 `VIRTUAL_ENV=... uv pip install socksio`，要么 `HF_HUB_OFFLINE=1` 走缓存，要么直接用已下载模型。
 - 后台进程会被会话回收杀掉；需要长跑任务时通过持久 exec 会话前台运行（分段等待），或用 disown + 轮询日志。

@@ -23,6 +23,8 @@ metadata:
 
 ### 第 1 步：打开录制页，从 pageAssets 拿签名 URL
 
+下方是历史浏览器工具接口示例，浏览器 ID 与 API 不可直接照搬。先阅读当前环境实际提供的浏览器工具文档，仅调用可用接口；页面需要登录或访问码时须使用有权限的会话。无浏览器能力且 HTML 无直链时记录未完成。
+
 用 CUA 在浏览器（IAB 或 Chrome）打开 `https://meeting.tencent.com/cw/<code>`（/crm/ 会 302 到 /cw/），等播放器加载后执行：
 
 ```javascript
@@ -60,6 +62,8 @@ ffprobe -v error -show_entries format=duration,size -show_entries stream=index,c
 ```
 
 核对：时长与会议实际时长一致（页面显示）、文件大小与 content-range 总长一致、双流时长一致。
+
+`auto` 只下载页面可解析出的 URL，不保证一定找到两路；必须逐一确认 screen/speaker 流。脚本退出成功、ffprobe 能解析或文件大小相同，均不能单独证明双流齐全或内容已全量处理。HTML 解析失败、签名过期、缺流和校验失败须写入 Processing Exception。
 
 ## 已验证的环境事实（2026-09-07 会议实测）
 

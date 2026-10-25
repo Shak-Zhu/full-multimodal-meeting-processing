@@ -65,7 +65,7 @@ def curl_probe(mp4_url: str, referer: str) -> dict:
 def curl_download(mp4_url: str, referer: str, out_path: str) -> str:
     """带断点续传的全量下载."""
     cmd = [
-        "curl", "-sS", "--max-time", "2800", "-C", "-",
+        "curl", "--fail", "-sS", "--max-time", "2800", "-C", "-",
         "-o", out_path,
         "-H", f"User-Agent: {UA}",
         "-H", f"Referer: {referer}",

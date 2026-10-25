@@ -18,7 +18,7 @@ verbatim.py — 解析会议平台导出的逐字稿（TicNote 类），重建�
 
 输出：
   - 按时间分节的逐字稿骨架（原话保留，不摘要/润色/删除）
-  - 全局术语纠正（GLOBAL_FIX，仅限"可确认的同音错字"，全部须登记修正对照表）
+  - 全局术语纠正（global_fix，保留原词并加修正标注，全部须登记修正对照表）
   - 行内标注（INLINE_NOTE：〔疑似：…〕〔待确认…〕〔用户纠正…〕）
   - 静音/休息区插入提示块（GAP 配置）
 
@@ -58,13 +58,14 @@ CONFIG = {
 HEADER_NOTE = """> **本部分说明（必读）**
 >
 > 1. 以下逐字稿以平台原始转写为底本，**未做摘要、改写、润色**；口头语、重复、自我修正、插话均原样保留（宪法第十七条）。
-> 2. 发言人归属已按"时间段 + 对话结构 + 独立 ASR 交叉"重建；无法可靠判断的段落标注"（发言人归属存疑）"。
-> 3. 可确认的 ASR 同音术语错误已就地纠正并全部登记于"修正对照表"；无法确认的内容保留原文并加〔待确认/疑似：…〕标记。
+> 2. 本脚本仅生成骨架，不执行独立 ASR 或发言人身份核验；映射依据须由处理者另行核验并登记，未知编号标注“（发言人归属存疑）”。
+> 3. 原话保留；配置的术语修正以行内标注呈现。修正依据与修正对照表须由处理者补齐，脚本不证明其已完成。
 > 4. 时间戳为平台转写标注的段落起始时间。
 """
 
 def parse(path):
-    lines = open(path, encoding="utf-8").read().splitlines()
+    with open(path, encoding="utf-8") as source:
+        lines = source.read().splitlines()
     utts, cur = [], None
     for ln in lines:
         ln = ln.rstrip()
@@ -80,9 +81,10 @@ def parse(path):
             cur = {"sp": m.group(1), "ts": ts, "text": ""}
             continue
         if cur is None:
+            print("未归入发言的文本，须人工核对：" + ln, file=sys.stderr)
             continue
         t = ln.strip()
-        if not t or t.startswith("生成时间") or t.endswith("_transcript") or t == "转录内容":
+        if not t:
             continue
         if not cur["text"]:
             cur["text"] = t
@@ -94,6 +96,8 @@ def parse(path):
                 cur["text"] += t
     if cur and cur["text"]:
         utts.append(cur)
+    if not utts:
+        raise ValueError("未识别到发言；请检查输入格式，不得将空结果视为完整逐字稿")
     return utts
 
 def fmt_ts(s):
@@ -102,13 +106,13 @@ def fmt_ts(s):
 def map_speaker(u, cfg):
     sp, ts = u["sp"], u["ts"]
     # 真名标注直接保留
-    if sp not in (set(cfg.get("default_speaker_map", {})) | {"SPEAKER_00", "SPEAKER_01", "SPEAKER_02", "SPEAKER_03"}):
-        return sp
     mapping = dict(cfg.get("default_speaker_map", {}))
     for brk, extra in cfg.get("phase_breaks", []) or []:
         if ts >= brk:
             mapping.update(extra)
-    return mapping.get(sp, sp + "（发言人归属存疑）")
+    if sp in mapping:
+        return mapping[sp]
+    return sp + "（发言人归属存疑）" if re.fullmatch(r"SPEAKER_\d+", sp) else sp
 
 def section_for(ts, sections):
     cur = None
@@ -140,7 +144,7 @@ def main():
             gap_idx += 1
         txt = u["text"]
         for a, b in cfg.get("global_fix", []):
-            txt = txt.replace(a, b)
+            txt = txt.replace(a, a + "〔修正：" + b + "；依据见修正对照表〕")
         for nts, src, dst in cfg.get("inline_note", []):
             if abs(ts - nts) <= 8 and src in txt:
                 txt = txt.replace(src, dst)

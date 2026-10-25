@@ -26,6 +26,7 @@ metadata:
 
 ## 开工前必读
 
+0. 先检查 [README.md 的运行前提](README.md#运行前提)。本机模型、工具、代理和历史性能不是接收方环境事实。脚本路径均相对本 Skill 目录；从其他工作目录调用时使用其绝对路径。
 1. 通读 [references/constitution.md](references/constitution.md)（规则原文）。
 2. 通读 [references/lessons-learned.md](references/lessons-learned.md)——历次真实踩坑：虚假全量声明、ASR 静音幻觉、发言人机械合并、人名无证据裁定、多草稿竞争、长文件写入技巧、本机工具链环境。
 3. 扫描输出目录中同一会议的既有草稿：选最完整的一份作为唯一交付基底，其余中间稿改名 `.bakN` 保留（lessons §2）。
@@ -49,7 +50,7 @@ metadata:
 ## "音频从第一秒到最后一秒"的合格标准
 
 - 必须有**独立 ASR 引擎的全长一次性转写**，留下可验证证据：引擎与模型名、参数、总耗时、段数、覆盖区间 = [0, 总时长]。片段抽样只能记"局部抽查"，不得记"完整处理"（lessons §1）。
-- 本机优先 `whisper-cli`（whisper.cpp，ggml-large-v3-turbo.bin 已在本地）；备选 faster-whisper（CPU int8）。mlx-whisper 需 venv 且注意 SOCKS 代理缺 socksio 的问题，或 `HF_HUB_OFFLINE=1` 走本地缓存（lessons §10）。
+- 优先检查 `whisper-cli`（whisper.cpp）和可用模型；原作者本机有 ggml-large-v3-turbo.bin，仓库不包含模型，接收方须自行准备。备选 faster-whisper（CPU int8）。mlx-whisper 的 venv、代理和缓存也须按实际环境确认（lessons §10）。
 - 长跑转写放持久会话前台执行并轮询（后台进程会被会话回收）。
 - 平台逐字稿与独立 ASR 逐段比对；重点校验宪法第三条清单（人名/数字/日期/缩写/多语言/发言人）。
 - 静音与低音量区：用 `ffmpeg astats/silencedetect` 分段测音量；识别幻觉模式（循环赞美文本、重复单字），不得当作内容；低音量区保留逐字稿文本但标注"音频无法独立验证"（lessons §3）。
@@ -57,7 +58,7 @@ metadata:
 ## 视频处理标准
 
 - `ffmpeg` 抽音轨 → 同上音频流程。
-- 视觉通道：`ffmpeg -i in.mp4 -vf "select='gt(scene,0.3)',showinfo" -vsync vfr frame_%04d.png`（场景变化抽帧）或按固定间隔抽帧，逐帧用 view_image 查看。
+- 视觉通道：场景变化抽帧后逐帧用可用的图像工具查看。结合强切换和低阈值滚动检测（历史案例分别为 0.15、0.04，见 lessons §12），并检查首尾及两次变化间的时间段；单一阈值或固定间隔抽帧不能证明视频完整覆盖。记录实际覆盖范围，无法确认的区间记入异常。
 - 画面理解要恢复结构（标题/行列/归属/箭头/图例/状态色），不机械 OCR；Speaker 发言与画面位置的对应尽量标注。
 - 逐字稿对应时间点插入 `### [开始投屏]` + 结构化中文画面内容（宪法第二十五条）。
 - 输入不含视频时，在审计中如实写"无视频通道"，不得写"视频已处理"。
@@ -87,6 +88,8 @@ metadata:
 
 - `scripts/inventory.py`：File Inventory 生成器（递归收集、类型识别、SHA-256、音视频时长、Markdown 表）。
 - `scripts/verbatim.py`：平台逐字稿（TicNote 类 ● SPEAKER | 时间戳 格式）解析与发言人重归属骨架生成器；CONFIG 区必须按本场会议论证后修改，未配置的发言人一律标"归属存疑"，防止机械合并。
+
+按会议调整 CONFIG 时先把脚本复制到临时工作目录，保留原始材料和安装包。检查解析警告、段数和原文覆盖；脚本不做 ASR、翻译、视觉理解或身份核验，输出骨架不能直接当作审计通过的最终逐字稿。
 
 ## 边界
 
