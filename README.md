@@ -15,8 +15,11 @@
 - `scripts/inventory.py`：文件清单生成器
 - `scripts/verbatim.py`：逐字稿骨架生成器
 - `agents/openai.yaml`：Codex 技能展示配置
+- `dependencies/tencent-meeting-extract/`：腾讯会议录制提取技能及下载脚本，处理腾讯会议链接时随包使用
 
 ## 使用
 
 将本仓库目录放入 Codex 技能目录，并按 `SKILL.md` 中的规则调用。
+
+腾讯会议录制链接场景所需的提取技能和下载脚本已随仓库提供，无需依赖本机其他技能目录。
 

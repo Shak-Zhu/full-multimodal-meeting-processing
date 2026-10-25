@@ -32,7 +32,7 @@ metadata:
 
 ## 执行流程
 
-0. **腾讯会议链接预检**：输入含 meeting.tencent.com/cw/ 或 /crm/ 链接时，先用 [tencent-meeting-extract](../tencent-meeting-extract/SKILL.md) 技能提取并下载 MP4 双流（屏幕流+说话人视窗流），把两条 MP4 加入 File Inventory；MP4 音轨作为 ASR 基准（可能比用户提供的 WAV 更完整），视觉通道按该技能的场景检测方法抽帧。
+0. **腾讯会议链接预检**：输入含 meeting.tencent.com/cw/ 或 /crm/ 链接时，先用 [tencent-meeting-extract](dependencies/tencent-meeting-extract/SKILL.md) 技能提取并下载 MP4 双流（屏幕流+说话人视窗流），把两条 MP4 加入 File Inventory；MP4 音轨作为 ASR 基准（可能比用户提供的 WAV 更完整），视觉通道按该技能的场景检测方法抽帧。
 
 1. **File Inventory**：`python3 scripts/inventory.py <文件/目录>` 生成清单（类型、大小、SHA-256、音视频时长）；再补上用户口头指定或其他容器内的材料。
 2. **完整读取所有文本/文档/表格/图片至 EOF**：DOCX 用 python-docx 或 textutil；XLSX 逐个 Sheet；PPTX 逐页；PDF 逐页；图片逐张查看。

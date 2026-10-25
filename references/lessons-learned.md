@@ -115,4 +115,4 @@
 - 屏幕流场景检测：强切换阈值 0.15 只能找到共享开始/结束；共享文档的滚动要用 0.04 低阈值再扫一遍，两轮结合才能完整覆盖滚动内容。
 - 共享结束后黑场不代表缺失——56:20 后无人共享画面转黑是正常现象（会上有人想投屏被叫停）。
 
-**完整流程**已固化为独立技能：[tencent-meeting-extract](../../tencent-meeting-extract/SKILL.md)，含自动下载脚本 `scripts/tm_download.py`（probe/download/auto 三模式，auto 从页面 HTML 解析双流 URL）。
+**完整流程**已固化为独立技能：[tencent-meeting-extract](../dependencies/tencent-meeting-extract/SKILL.md)，含自动下载脚本 `scripts/tm_download.py`（probe/download/auto 三模式，auto 从页面 HTML 解析双流 URL）。
